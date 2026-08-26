@@ -59,4 +59,4 @@ Read them as evidence that the strategies run and were measured, not as performa
 ---
 
 *Part of [Forex Trading Strategies](https://github.com/pranay123-stack/forex-trading-strategies) ·
-related: [Algorithmic Trading](https://github.com/pranay123-stack/algorithmic-trading)*
+related: [Crypto Trading Strategies](https://github.com/pranay123-stack/crypto-trading-strategies)*
