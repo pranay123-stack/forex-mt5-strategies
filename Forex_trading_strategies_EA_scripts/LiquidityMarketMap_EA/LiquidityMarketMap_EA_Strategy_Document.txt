@@ -1,0 +1,215 @@
+==========================================
+  LiquidityMarketMap EA - Strategy Document
+  iFVG-Based SMC Execution Strategy V1
+==========================================
+
+==========================================
+  1. STRATEGY OVERVIEW
+==========================================
+
+Name:           LiquidityMarketMap_EA
+Type:           Smart Money Concepts (SMC) / ICT-derived
+Version:        1.00
+Instrument:     NQ (Nasdaq Futures) or any symbol
+Execution TF:   Chart timeframe (designed for 15s, works on any)
+Direction:      Both (LONG and SHORT)
+Style:          Precision execution within institutional zones
+
+Core Premise:
+  Markets move to collect liquidity. FVGs, iFVGs, Breaker Blocks,
+  and Rejection Blocks mark levels where institutions have acted.
+  Price is likely to return to these zones and react. By executing
+  entries when price breaks through these zones, we capture
+  high-probability reversal/continuation setups with tight risk.
+
+==========================================
+  2. ZONE TYPES (4 categories)
+==========================================
+
+  --- Fair Value Gap (FVG) ---
+    3-candle formation with price gap between candle[0] and candle[2]
+    Bullish: high[2] < low[0] → zone = [low[0], high[2]]
+    Bearish: low[2] > high[0] → zone = [low[2], high[0]]
+    Acts as magnet — price tends to return and fill the gap
+
+  --- Inverse FVG (iFVG) — PRIMARY ENTRY ZONE ---
+    Formed when price closes through an existing FVG, inverting polarity
+    Bullish FVG closed through → becomes bearish iFVG (resistance)
+    Bearish FVG closed through → becomes bullish iFVG (support)
+    Highest conviction setup — tested, inverted, and defended by institutions
+
+  --- Breaker Block ---
+    Forms when price breaks through a prior swing high/low
+    Broken resistance becomes support (bullish breaker)
+    Broken support becomes resistance (bearish breaker)
+
+  --- Rejection Block ---
+    Large body candle (2x avg) closing in top/bottom 25% of range
+    The wick area marks where price was aggressively rejected
+    Bullish: lower wick = support | Bearish: upper wick = resistance
+
+==========================================
+  3. TIMEFRAME HIERARCHY (7 levels)
+==========================================
+
+  TF      Weight   Role
+  ----    ------   ----
+  D1      5★       Directional bias (macro)
+  H4      4★       Structural context
+  H2      4★       Swing context
+  H1      3★       Entry context
+  M30     3★       Zone refinement
+  M15     2★       Trigger context
+  M5      2★       Fine-tune
+
+  Analysis: Top-down from D1 → H4 → H2 → H1 before looking at entry TF
+  Zones from higher TFs carry more weight in trade decisions
+
+==========================================
+  4. SESSION FILTER
+==========================================
+
+  Session      ET Hours            Priority
+  -------      --------            --------
+  New York     9:30 AM - 12:00 PM  PRIMARY (highest volume, best reactions)
+  Asia         8:00 PM - 12:00 AM  SECONDARY (sets up liquidity for NY)
+
+  Trading outside these windows is avoided.
+  ServerGMTOffset input adjusts for your broker's server time.
+
+==========================================
+  5. ENTRY LOGIC
+==========================================
+
+  Pre-entry checklist (automated):
+    1. Session filter passes (NY or Asia)
+    2. HTF bias determined from D1/H4 zones
+    3. Zone detected and valid (iFVG preferred)
+    4. Zone aligns with HTF bias direction
+    5. Price enters zone and candle closes through
+
+  LONG Entry:
+    - Price retraces into a bullish zone (iFVG/FVG/Breaker/Rejection)
+    - Last closed candle breaks above zone top
+    - HTF bias is bullish (if RequireHTFBias enabled)
+
+  SHORT Entry:
+    - Price retraces into a bearish zone
+    - Last closed candle breaks below zone bottom
+    - HTF bias is bearish
+
+  Zone priority: iFVG > FVG > Breaker > Rejection
+  Higher TF zones prioritized over lower TF zones
+
+==========================================
+  6. STOP LOSS
+==========================================
+
+  LONG:  SL = previous swing low on execution TF (below entry)
+  SHORT: SL = previous swing high on execution TF (above entry)
+
+  Buffer of 2 points added beyond the swing level.
+
+  Safety check: If SL distance > 1.5x average bar range,
+  the setup is skipped (too far, invalid risk).
+
+==========================================
+  7. TAKE PROFIT (Priority Order)
+==========================================
+
+  1st: Previous structural swing high/low (HTF level)
+  2nd: 0.9R (90% of risk distance) — disciplined default
+
+==========================================
+  8. POSITION SIZING
+==========================================
+
+  Risk-based sizing (not fixed lots):
+
+    Contracts = Dollar Risk / (SL Distance in Points × Point Value)
+
+  NQ: Point Value = $20
+  ES: Point Value = $12.50
+  Forex: Uses tick value automatically
+
+  Example: $400 risk, 10-point SL → $400 / (10 × $20) = 2 contracts
+
+==========================================
+  9. RISK MANAGEMENT
+==========================================
+
+  - Max 2 active trades at once
+  - Max 2 stop-outs per session (then stop trading)
+  - Breakeven: move SL to entry + buffer when price moves 1R in favour
+  - No revenge trading logic (enforced by session stop-out limit)
+  - Position size recalculated per trade from SL distance
+
+==========================================
+  10. INPUT PARAMETERS
+==========================================
+
+  --- General ---
+  MagicNumber          20250526    EA identifier
+  TradeSymbol          ""          Symbol (empty = current chart)
+
+  --- Session Filter ---
+  UseSessionFilter     true        Enable session filter
+  NY_StartHour         9           NY start (ET)
+  NY_StartMin          30
+  NY_EndHour           12          NY end (ET)
+  Asia_StartHour       20          Asia start (ET)
+  Asia_EndHour         0           Asia end (ET, midnight)
+  ServerGMTOffset      -5          Broker server GMT offset
+
+  --- Zone Detection ---
+  SwingLookback        10          Bars to look back for swings
+  RejectionBodyMult    2           Rejection block body multiplier
+  RejectionCloseZone   0.25        Close must be in top/bottom 25%
+  MaxZonesPerTF        5           Max zones stored per TF
+  UseiFVGOnly          false       Only trade iFVG zones
+
+  --- Entry ---
+  RequireHTFBias       true        Must align with D1/H4 bias
+  MinHTFZoneWeight     3           Minimum TF weight to consider
+
+  --- Risk ---
+  DollarRisk           400         $ risk per trade
+  PointValue           20          $ per point (NQ=20, ES=12.50)
+  FixedLotSize         0.1         Fallback if DollarRisk=0
+  MaxActiveTrades      2           Max simultaneous positions
+  MaxSessionStopouts   2           Stop after N losses per session
+  UseBreakeven         true        Move to BE at 1R
+  BreakevenBuffer      2.0         Points above entry for BE
+
+  --- Take Profit ---
+  DefaultRR            0.9         Default R:R (0.9R)
+  UseStructuralTP      true        Use swing high/low as TP
+
+==========================================
+  11. RECOMMENDED BACKTEST SETTINGS
+==========================================
+
+  For NQ futures:
+    Symbol:    NQ or NQM (check broker)
+    TF:        M1 (closest to 15s available in standard MT5)
+    Modeling:  Every tick based on real ticks
+    Deposit:   $50,000
+    Date:      2024.01.01 to 2025.12.31
+
+  For Forex (EURUSD etc.):
+    Symbol:    EURUSD
+    TF:        M5 or M15
+    Deposit:   $10,000
+    PointValue: 0 (will auto-detect from tick value)
+    DollarRisk: 100
+
+==========================================
+  12. ZONE INVALIDATION RULES
+==========================================
+
+  A zone is invalidated when price CLOSES through it:
+    - Bullish zone: candle closes below zone bottom → dead
+    - Bearish zone: candle closes above zone top → dead
+    - iFVG closed through again: zone is dead, no re-entry
+
+  The EA automatically removes invalid zones each bar.

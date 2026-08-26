@@ -1,0 +1,232 @@
+==========================================
+  TSO_MeanReversion_EA - Strategy Document
+  Triple Sine Oscillator Mean Reversion
+==========================================
+
+==========================================
+  1. STRATEGY OVERVIEW
+==========================================
+
+Name:           TSO_MeanReversion_EA
+Type:           Mean Reversion
+Version:        1.00
+Symbol:         Any (designed for Forex majors)
+Timeframe:      Any (recommended: M15, H1)
+Direction:      Both (BUY and SELL)
+Style:          Mechanical, fully automated
+
+Description:
+  The TSO EA uses a custom oscillator based on the sine-cubed function
+  applied to a Z-score of price. When price deviates significantly from
+  its moving average (relative to standard deviation), the oscillator
+  reaches extreme values. The EA enters trades expecting price to
+  revert back toward the mean.
+
+  Core idea: Buy when TSO crosses into oversold zone (< -0.7).
+  Sell when TSO crosses into overbought zone (> +0.7).
+  Multiple entries allowed in the same direction (up to MaxEntries).
+
+==========================================
+  2. INDICATOR: Triple Sine Oscillator (TSO)
+==========================================
+
+  --- Mathematical Formula ---
+
+  Step 1: Compute Z-score
+    scaled = Ksense * (Close - SMA) / StdDev
+
+    Where:
+      Close  = bar's close price
+      SMA    = Simple Moving Average of Close (period = mPeriod)
+      StdDev = Standard Deviation of Close (period = mPeriod)
+      Ksense = sensitivity multiplier (default 0.5)
+
+  Step 2: Apply sine cube
+    TSO = sin(scaled)^3 = sin(scaled) * sin(scaled) * sin(scaled)
+
+  --- Properties ---
+    Range:       [-1, +1] (always bounded due to sin^3)
+    > +0.7:      Overbought zone
+    < -0.7:      Oversold zone
+    ~ 0:         Near equilibrium (price near MA)
+
+  --- Why Sine Cube? ---
+    - sin() compresses any input to [-1, +1]
+    - Cubing amplifies extreme values (near +/-1)
+    - Cubing dampens mid-range noise (values near 0)
+    - Preserves the sign (negative stays negative)
+    - Creates sharper, more decisive signals at extremes
+
+  --- Ksense Effect ---
+    Ksense = 0.3: Less sensitive, fewer signals, larger moves needed
+    Ksense = 0.5: Default, balanced sensitivity
+    Ksense = 1.0: More sensitive, more signals, smaller moves trigger
+    Ksense = 2.0: Very sensitive, many signals, risk of overtrading
+
+==========================================
+  3. ENTRY CONDITIONS
+==========================================
+
+  --- BUY ENTRY ---
+    1. Previous bar TSO > -TSO_Threshold  (was NOT oversold)
+    2. Current bar TSO  <= -TSO_Threshold  (just ENTERED oversold zone)
+    3. No SELL positions open             (directional exclusivity)
+    4. Total positions < MaxEntries        (capacity check)
+    5. Bars since last entry >= BarInterval (cooldown)
+
+    Logic: Price has dropped far enough below the mean that the TSO
+    crossed into oversold territory. Expect a bounce back up.
+
+  --- SELL ENTRY ---
+    1. Previous bar TSO < +TSO_Threshold  (was NOT overbought)
+    2. Current bar TSO  >= +TSO_Threshold  (just ENTERED overbought zone)
+    3. No BUY positions open              (directional exclusivity)
+    4. Total positions < MaxEntries        (capacity check)
+    5. Bars since last entry >= BarInterval (cooldown)
+
+    Logic: Price has risen far enough above the mean that the TSO
+    crossed into overbought territory. Expect a pullback down.
+
+==========================================
+  4. EXIT CONDITIONS
+==========================================
+
+  Exits handled entirely by fixed SL and TP:
+
+  BUY:  SL = Entry - StopLoss points  |  TP = Entry + TakeProfit points
+  SELL: SL = Entry + StopLoss points  |  TP = Entry - TakeProfit points
+
+  No manual close logic. SL/TP set at order open time.
+
+  Default Risk-Reward = TP/SL = 200/100 = 2:1
+
+==========================================
+  5. POSITION MANAGEMENT
+==========================================
+
+  Directional Exclusivity:
+    - If BUY positions are open → SELL signals are BLOCKED
+    - If SELL positions are open → BUY signals are BLOCKED
+    - Only one direction at a time
+
+  Multiple Entries:
+    - Up to MaxEntries (5) positions in the SAME direction
+    - Each new signal can add another position if cooldown is met
+    - Useful for pyramiding into a mean-reversion move
+
+  Cooldown:
+    - BarInterval (10) bars must pass between any entry
+    - Prevents overtrading on rapid oscillations
+
+  Max Positions: 5 total (buys + sells combined)
+
+==========================================
+  6. INPUT PARAMETERS
+==========================================
+
+  --- TSO Indicator ---
+  Parameter        Default    Description
+  ---------        -------    ---------------------------------
+  mPeriod          20         SMA & StdDev lookback period
+  Ksense           0.5        Sensitivity multiplier
+  TSO_Threshold    0.7        Overbought/Oversold level
+
+  --- Trade Settings ---
+  Parameter        Default    Description
+  ---------        -------    ---------------------------------
+  TakeProfit       200        Take profit (points)
+  StopLoss         100        Stop loss (points)
+  LotSize          0.1        Lot size per entry
+  MaxEntries       5          Max simultaneous positions
+  BarInterval      10         Min bars between entries
+  MagicNumber      12345      EA identifier
+
+  NOTE: SL/TP are in POINTS (not pips).
+    5-digit broker: 100 points = 10 pips
+    4-digit broker: 100 points = 100 pips
+
+==========================================
+  7. SIGNAL FLOW DIAGRAM
+==========================================
+
+  New Bar Formed
+       |
+       v
+  Calculate TSO (bar[1])
+       |
+       v
+  Count Open Positions (buy, sell)
+       |
+       v
+  Total positions >= MaxEntries?
+       |             |
+      YES           NO
+       |             |
+     SKIP            v
+           Check TSO Crossover
+                |
+       +--------+--------+
+       |                  |
+  TSO crossed         TSO crossed
+  below -0.7?         above +0.7?
+       |                  |
+      YES                YES
+       |                  |
+       v                  v
+  CanOpenBuy?        CanOpenSell?
+  - No sells open?   - No buys open?
+  - Cooldown met?    - Cooldown met?
+       |                  |
+      YES                YES
+       |                  |
+       v                  v
+  OPEN BUY           OPEN SELL
+  (SL + TP)          (SL + TP)
+       |                  |
+       v                  v
+  Reset cooldown     Reset cooldown
+
+==========================================
+  8. KEY DIFFERENCES FROM FVI_EA
+==========================================
+
+  Feature              FVI_EA                TSO_EA
+  ---------            ------                ------
+  Oscillator           Rose Curve            Sine Cube (Z-score)
+  Trend Filter         Awesome Oscillator    None (pure mean reversion)
+  Direction            Both simultaneously   Directional exclusivity
+  Max Positions        1 buy + 1 sell        5 total, one direction
+  Multiple Entries     No                    Yes (pyramiding)
+  SL/TP Units          Pips                  Points
+  Volatility Input     ATR                   Standard Deviation
+
+==========================================
+  9. RECOMMENDED BACKTEST SETTINGS
+==========================================
+
+  Symbol:      EURUSD
+  Timeframe:   H1
+  Modeling:    Every tick
+  Deposit:     $10,000
+  Leverage:    1:100
+  Date Range:  2024.01.01 to 2025.12.31
+
+  Parameter suggestions:
+    Conservative: Ksense=0.3, Threshold=0.8, SL=150, TP=300, MaxEntries=3
+    Default:      Ksense=0.5, Threshold=0.7, SL=100, TP=200, MaxEntries=5
+    Aggressive:   Ksense=1.0, Threshold=0.5, SL=80, TP=160, MaxEntries=5
+
+==========================================
+  10. OPTIMIZATION PARAMETERS
+==========================================
+
+  Most impactful:
+    1. Ksense           (range: 0.2 to 2.0, step 0.1)
+    2. TSO_Threshold    (range: 0.3 to 0.9, step 0.1)
+    3. mPeriod          (range: 10 to 50, step 5)
+    4. StopLoss         (range: 50 to 200, step 25)
+    5. TakeProfit       (range: 100 to 400, step 50)
+
+  Less impactful:
+    6. MaxEntries       (range: 1 to 10)
+    7. BarInterval      (range: 5 to 20)

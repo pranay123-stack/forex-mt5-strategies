@@ -1,0 +1,273 @@
+==========================================
+  PPCorr_EA - Strategy Document
+  Pseudo Pearson Correlation Strategy
+==========================================
+
+==========================================
+  1. STRATEGY OVERVIEW
+==========================================
+
+Name:           PPCorr_EA
+Type:           Correlation-based Momentum / Divergence
+Version:        1.00
+Symbol:         Any (designed for Forex majors)
+Timeframe:      Any (recommended: H1, H4)
+Direction:      Both (BUY and SELL based on EMA trend)
+Style:          Mechanical, fully automated
+Files:          PPCorr_EA.mq5 (EA) + PseudoPC.mq5 (custom indicator)
+
+Description:
+  The PPCorr EA measures the statistical correlation between DeMarker
+  and MFI indicators, using RSI as a reference baseline. When the
+  correlation crosses a threshold, it signals either momentum alignment
+  (Strategy 1) or divergence (Strategy 2). Trade direction is determined
+  by a dual EMA trend filter.
+
+==========================================
+  2. INDICATOR: Pseudo Pearson Correlation (PPC)
+==========================================
+
+  --- What it measures ---
+    The correlation between DeMarker and MFI, both measured as
+    deviations from RSI (the reference baseline).
+
+  --- Mathematical Formula ---
+
+    For each bar, loop back CorrPeriod (21) bars:
+
+      x = DeMarker value        (already 0-1 range)
+      y = MFI value / 100       (normalized to 0-1)
+      z = RSI value / 100       (normalized to 0-1, reference baseline)
+
+      Deviations from RSI baseline:
+        dx = x - z   (how far DeMarker is from RSI)
+        dy = y - z   (how far MFI is from RSI)
+
+      Accumulate over CorrPeriod bars:
+        sum_xy += dx * dy
+        sum_x2 += dx * dx
+        sum_y2 += dy * dy
+
+      Pseudo Pearson Correlation:
+        r' = sum_xy / sqrt(sum_x2 * sum_y2)
+
+  --- Output Range ---
+    [-1, +1]
+    +1.0:  DeMarker and MFI perfectly correlated (relative to RSI)
+    -1.0:  DeMarker and MFI perfectly inversely correlated
+     0.0:  No correlation
+
+  --- Key Levels ---
+    +0.80: Strong positive correlation
+    +0.50: Moderate positive (default +PPr threshold)
+     0.00: No correlation
+    -0.50: Moderate negative (default -PPr threshold)
+    -0.80: Strong negative correlation
+
+==========================================
+  3. TREND FILTER: Dual EMA
+==========================================
+
+  Fast EMA:  Period = 2 (very responsive)
+  Slow EMA:  Period = 20
+
+  Fast EMA > Slow EMA → BULLISH → BUY signals
+  Fast EMA < Slow EMA → BEARISH → SELL signals
+
+  Note: Fast EMA period of 2 is very responsive — it essentially
+  tracks the last 2 bars' closing prices.
+
+==========================================
+  4. ENTRY CONDITIONS
+==========================================
+
+  --- Strategy 1: Correlated Momentum ---
+    Trigger: PPC crosses ABOVE +PPr threshold
+      (corr_prev < PPr AND corr_curr >= PPr)
+
+    Interpretation: DeMarker and MFI have become positively correlated.
+    Both indicators agree on market direction → momentum is confirmed.
+
+    + Bullish trend (FastEMA > SlowEMA) → OPEN BUY
+    + Bearish trend (FastEMA < SlowEMA) → OPEN SELL
+
+  --- Strategy 2: Non-Correlated ---
+    Trigger: PPC crosses BELOW -PPr threshold
+      (corr_prev > -PPr AND corr_curr <= -PPr)
+
+    Interpretation: DeMarker and MFI have become negatively correlated.
+    The indicators disagree → divergence signal.
+
+    + Bullish trend → OPEN BUY
+    + Bearish trend → OPEN SELL
+
+  --- Priority ---
+    When both strategies enabled, Strategy 1 is checked first.
+    Whichever triggers first on a given bar takes priority.
+
+==========================================
+  5. EXIT CONDITIONS
+==========================================
+
+  All exits via fixed SL and TP in POINTS:
+
+  BUY:  SL = Entry - StopLoss pts  |  TP = Entry + TakeProfit pts
+  SELL: SL = Entry + StopLoss pts  |  TP = Entry - TakeProfit pts
+
+  Default: SL = 300 pts, TP = 700 pts (2.33:1 RR)
+
+==========================================
+  6. POSITION MANAGEMENT
+==========================================
+
+  Max Positions:     1 (one at a time, checked by magic number)
+  Direction:         Determined by EMA trend at signal time
+  Multiple Entries:  No
+  Cooldown:          None (new bar check only)
+
+==========================================
+  7. INPUT PARAMETERS
+==========================================
+
+  --- Trade Settings ---
+  Parameter         Default    Description
+  ---------         -------    ---------------------------------
+  Lots              0.01       Lot size
+  StopLoss          300        SL in points
+  TakeProfit        700        TP in points
+  Slippage          3          Max slippage points
+  MagicNumber       77889900   EA identifier
+
+  --- PseudoPC Indicator ---
+  Parameter         Default    Description
+  ---------         -------    ---------------------------------
+  CorrPeriod        21         Correlation lookback bars
+  RSIPeriod         14         RSI period
+  MFIPeriod         14         MFI period (tick volume)
+  DeMPeriod         14         DeMarker period
+
+  --- Strategy ---
+  Parameter         Default    Description
+  ---------         -------    ---------------------------------
+  PPr               0.5        Correlation threshold (0.1 to 1.0)
+  EnableStrategy1   true       Correlated Momentum (+PPr crossover)
+  EnableStrategy2   false      Non-Correlated (-PPr crossunder)
+
+  --- Trend Filter ---
+  Parameter         Default    Description
+  ---------         -------    ---------------------------------
+  FastMAPeriod      2          Fast EMA period
+  SlowMAPeriod      20         Slow EMA period
+
+==========================================
+  8. FILE SETUP (IMPORTANT)
+==========================================
+
+  This EA requires TWO files:
+
+  1. PseudoPC.mq5 → must be compiled and placed in:
+     MQL5/Indicators/PseudoPC.mq5
+     (NOT in Experts — it's an indicator, not an EA)
+
+  2. PPCorr_EA.mq5 → must be compiled and placed in:
+     MQL5/Experts/Advisors/PPCorr_EA.mq5
+
+  SETUP STEPS:
+    Step 1: Copy PseudoPC.mq5 to MQL5/Indicators/
+    Step 2: Compile PseudoPC.mq5 in MetaEditor (F7)
+    Step 3: Copy PPCorr_EA.mq5 to MQL5/Experts/Advisors/
+    Step 4: Compile PPCorr_EA.mq5 in MetaEditor (F7)
+    Step 5: Refresh Navigator in MT5
+    Step 6: Backtest or attach to chart
+
+  If PseudoPC.ex5 is missing, the EA will print:
+    "Failed to load PseudoPC indicator"
+
+==========================================
+  9. SIGNAL FLOW DIAGRAM
+==========================================
+
+  New Bar Formed
+       |
+       v
+  Read PseudoPC values (bar[1] and bar[2])
+       |
+       v
+  Read FastEMA and SlowEMA (bar[1])
+       |
+       v
+  Has open position?
+       |          |
+      YES        NO
+       |          |
+     SKIP         v
+            Strategy 1 enabled?
+                 |
+                YES
+                 |
+                 v
+           PPC crossed above +PPr?
+           (corr_prev < PPr AND corr_curr >= PPr)
+                 |
+                YES → Trend? → BUY/SELL
+                 |
+                NO
+                 |
+                 v
+            Strategy 2 enabled?
+                 |
+                YES
+                 |
+                 v
+           PPC crossed below -PPr?
+           (corr_prev > -PPr AND corr_curr <= -PPr)
+                 |
+                YES → Trend? → BUY/SELL
+
+==========================================
+  10. RECOMMENDED BACKTEST SETTINGS
+==========================================
+
+  Symbol:      EURUSD
+  Timeframe:   H1
+  Modeling:    Every tick
+  Deposit:     $10,000
+  Leverage:    1:100
+  Date Range:  2024.01.01 to 2025.12.31
+
+  Test 1: Strategy 1 only (Correlated Momentum)
+    EnableStrategy1 = true, EnableStrategy2 = false, PPr = 0.5
+
+  Test 2: Strategy 2 only (Non-Correlated)
+    EnableStrategy1 = false, EnableStrategy2 = true, PPr = 0.5
+
+  Test 3: Both strategies
+    EnableStrategy1 = true, EnableStrategy2 = true, PPr = 0.5
+
+==========================================
+  11. OPTIMIZATION PARAMETERS
+==========================================
+
+  Most impactful:
+    1. PPr             (range: 0.2 to 0.8, step 0.1)
+    2. CorrPeriod      (range: 10 to 50, step 5)
+    3. FastMAPeriod    (range: 2 to 10, step 1)
+    4. SlowMAPeriod    (range: 10 to 50, step 5)
+    5. StopLoss        (range: 100 to 500, step 50)
+    6. TakeProfit      (range: 300 to 1000, step 100)
+
+==========================================
+  12. ALL EAs COMPARISON
+==========================================
+
+  Feature        FVI       TSO       VB        Butterfly   PPCorr
+  ---------      ---       ---       --        ---------   ------
+  Input          Price     Price     Volume    Price+idx   DeM/MFI/RSI
+  Oscillator     Rose      sin^3     Butterfly Butterfly   Pearson Corr
+  Range          +/-1      +/-1      +/-3      +/-3        +/-1
+  Trend Filter   AO        None      PriceAct  Dual SMA    Dual EMA
+  Strategies     1         1         1+alt     2 select    2 select
+  Max Pos        1+1       5         2         1           1
+  External Ind   No        No        No        No          YES (PseudoPC)
+  SL/TP          Pips      Points    Pips      Points      Points
+  Unique         Rose math Pyramid   Vol-based Peak/Trough Correlation

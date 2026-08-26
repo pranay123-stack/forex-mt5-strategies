@@ -1,0 +1,244 @@
+==========================================
+  VB_EA - Strategy Document
+  Volume Boundary Oscillator (VBO) Strategy
+==========================================
+
+==========================================
+  1. STRATEGY OVERVIEW
+==========================================
+
+Name:           VB_EA (Volume Boundary Oscillator)
+Type:           Volume-based Momentum / Mean Reversion
+Version:        1.00
+Symbol:         Any (designed for Forex majors)
+Timeframe:      Any (recommended: M15, H1)
+Direction:      Both (BUY and SELL)
+Style:          Mechanical, fully automated
+
+Description:
+  The VB EA uses a custom volume oscillator that transforms tick volume
+  through either a Butterfly Curve or Triple Sine function. When volume
+  deviates significantly from its average and crosses a threshold, combined
+  with price action confirmation, the EA enters trades.
+
+  Unique feature: Alternating threshold logic for second entries — if the
+  first entry was triggered at a negative threshold, the second entry
+  triggers at a positive threshold (and vice versa).
+
+==========================================
+  2. INDICATOR: Volume Boundary Oscillator (VBO)
+==========================================
+
+  --- Step 1: Volume Statistics ---
+    AvgVol = sum(volume[i]) / N          (N = VolumePeriod)
+    StdVol = sqrt(sum(vol^2)/N - avg^2)  (population std dev)
+
+  --- Step 2: Scale Volume into t ---
+
+    Scaled Method (Z-Score):
+      t = ScaleFactor * (currentVolume - AvgVol) / StdVol
+
+    Logarithmic Method:
+      t = ScaleFactor * log(currentVolume)
+
+  --- Step 3: Apply Smoothing Function ---
+
+    Butterfly Curve (range approximately +/-3.0):
+      f(t) = sin(t) * (e^cos(t) - 2*cos(4t) - sin(t/12)^5)
+
+      This creates a complex, multi-lobed oscillation pattern.
+      The butterfly curve is sensitive to volume spikes and
+      produces more varied signal amplitudes.
+
+    Triple Sine (range +/-1.0):
+      f(t) = sin(t)^3
+
+      Simpler, bounded to [-1, +1]. Amplifies extremes,
+      dampens mid-range noise. More predictable behavior.
+
+==========================================
+  3. ENTRY CONDITIONS
+==========================================
+
+  --- FIRST BUY ENTRY ---
+    1. VBO crosses ABOVE BuyThreshold (+0.5 default)
+       (previous bar VBO < threshold, current bar VBO >= threshold)
+    2. Last closed candle is BULLISH (Close[1] > Open[1])
+    3. Current open buy positions < 2
+    4. Total open positions < 2
+
+  --- FIRST SELL ENTRY ---
+    1. VBO crosses BELOW SellThreshold (-0.5 default)
+       (previous bar VBO > threshold, current bar VBO <= threshold)
+    2. Last closed candle is BEARISH (Close[1] < Open[1])
+    3. Current open sell positions < 2
+    4. Total open positions < 2
+
+  --- SECOND BUY ENTRY (Alternating Threshold) ---
+    If the first buy triggered at a NEGATIVE threshold:
+      → Second buy triggers when VBO crosses above POSITIVE threshold
+    If the first buy triggered at a POSITIVE threshold:
+      → Second buy triggers when VBO crosses above NEGATIVE threshold
+    No price action confirmation required for second entry.
+
+  --- SECOND SELL ENTRY (Alternating Threshold) ---
+    Same alternating logic as buys but in reverse direction.
+    No price action confirmation required for second entry.
+
+==========================================
+  4. EXIT CONDITIONS
+==========================================
+
+  All exits via fixed SL and TP in pips:
+
+  BUY:  SL = Entry - StopLoss pips  |  TP = Entry + TakeProfit pips
+  SELL: SL = Entry + StopLoss pips  |  TP = Entry - TakeProfit pips
+
+  Default Risk-Reward = 100/50 = 2:1
+
+  No signal-based exits. SL/TP handle all closing.
+
+==========================================
+  5. POSITION MANAGEMENT
+==========================================
+
+  Max BUY positions:   2
+  Max SELL positions:  2
+  Max TOTAL positions: 2 (buys + sells combined)
+  Alternating Entry:   Second entry uses opposite threshold polarity
+  Price Confirmation:  Required for first entry only
+  Cooldown:            None (bar-based processing only)
+
+==========================================
+  6. INPUT PARAMETERS
+==========================================
+
+  --- VBO Indicator ---
+  Parameter         Default          Description
+  ---------         -------          ---------------------------------
+  VolumePeriod      20               Lookback for avg/stddev of volume
+  ScaleFactor       1.0              Multiplier on scaled volume
+  InputMethod       scaledMethod     Z-Score (0) or Logarithmic (1)
+  SmoothingMethod   ButterflyCurve   Butterfly (0) or Triple Sine (1)
+
+  --- Trade Settings ---
+  Parameter         Default          Description
+  ---------         -------          ---------------------------------
+  LotSize           0.1              Lot size per entry
+  BuyThreshold      0.5              VBO level for buy signals
+  SellThreshold     -0.5             VBO level for sell signals
+  TakeProfit        100              TP in pips
+  StopLoss          50               SL in pips
+  MagicNumber       20250101         EA identifier
+  TradeComment      "VBO_EA"         Trade comment string
+
+==========================================
+  7. SIGNAL FLOW DIAGRAM
+==========================================
+
+  New Bar Formed
+       |
+       v
+  Calculate VBO (bar[1] volume stats + smoothing)
+       |
+       v
+  Sync Position State (count buys/sells)
+       |
+       v
+  Total positions >= 2?
+       |           |
+      YES         NO
+       |           |
+     SKIP          v
+          Check VBO Crossover
+               |
+      +--------+--------+
+      |                  |
+  VBO crossed         VBO crossed
+  above BuyThresh?    below SellThresh?
+      |                  |
+      v                  v
+  buyCount == 0?      sellCount == 0?
+      |        |          |        |
+     YES      NO(=1)     YES      NO(=1)
+      |        |          |        |
+      v        v          v        v
+  1st BUY   2nd BUY   1st SELL  2nd SELL
+  (need      (alt      (need     (alt
+  bullish    thresh,   bearish   thresh,
+  candle)    no PA)    candle)   no PA)
+
+==========================================
+  8. SMOOTHING FUNCTION COMPARISON
+==========================================
+
+  Butterfly Curve:
+    f(t) = sin(t) * (e^cos(t) - 2*cos(4t) - sin(t/12)^5)
+    Range: approximately +/-3.0
+    Behavior: Complex, multi-frequency oscillation
+    Best for: Volatile markets, wider thresholds (e.g., +/-1.0)
+    Pros: Captures volume spikes with nuance
+    Cons: Less predictable output range
+
+  Triple Sine:
+    f(t) = sin(t)^3
+    Range: exactly +/-1.0
+    Behavior: Simple, smooth, bounded
+    Best for: Stable markets, tighter thresholds (e.g., +/-0.5)
+    Pros: Predictable, easy to set thresholds
+    Cons: May miss subtle volume patterns
+
+==========================================
+  9. RECOMMENDED BACKTEST SETTINGS
+==========================================
+
+  Symbol:      EURUSD
+  Timeframe:   M15 or H1
+  Modeling:    Every tick
+  Deposit:     $10,000
+  Leverage:    1:100
+  Date Range:  2024.01.01 to 2025.12.31
+
+  --- Butterfly Curve settings ---
+    InputMethod     = scaledMethod
+    SmoothingMethod = ButterflyCurve
+    BuyThreshold    = 1.0
+    SellThreshold   = -1.0
+    (wider thresholds because butterfly output range is ~+/-3)
+
+  --- Triple Sine settings ---
+    InputMethod     = scaledMethod
+    SmoothingMethod = TripleSine
+    BuyThreshold    = 0.5
+    SellThreshold   = -0.5
+    (tighter thresholds because output range is +/-1)
+
+==========================================
+  10. OPTIMIZATION PARAMETERS
+==========================================
+
+  Most impactful:
+    1. BuyThreshold     (range: 0.2 to 2.0, step 0.1)
+    2. SellThreshold    (range: -2.0 to -0.2, step 0.1)
+    3. ScaleFactor      (range: 0.5 to 3.0, step 0.5)
+    4. VolumePeriod     (range: 10 to 50, step 5)
+    5. StopLoss         (range: 30 to 100, step 10)
+    6. TakeProfit       (range: 50 to 200, step 25)
+
+  Less impactful:
+    7. InputMethod      (0 or 1)
+    8. SmoothingMethod  (0 or 1)
+
+==========================================
+  11. COMPARISON WITH OTHER EAs
+==========================================
+
+  Feature          FVI_EA          TSO_EA           VB_EA
+  ---------        ------          ------           -----
+  Input Data       Price           Price            Volume
+  Oscillator       Rose Curve      sin^3(Z-score)   Butterfly/sin^3
+  Trend Filter     AO              None             Price Action
+  Max Positions    1+1             5 one-dir        2 total
+  Alternating      No              No               Yes
+  SL/TP Units      Pips            Points           Pips
+  Unique Feature   Rose math       Pyramiding       Volume-based signals

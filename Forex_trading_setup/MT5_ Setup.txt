@@ -1,0 +1,143 @@
+================================================================================
+                    FOREX TRADING SETUP GUIDE FOR LINUX
+                    MetaTrader 5 
+================================================================================
+
+This guide covers the complete setup process for running MT5 trading strategies
+on Linux, from installation to live trading.
+
+================================================================================
+                         STEP 1: INSTALL METATRADER 5 ON LINUX
+================================================================================
+
+MetaTrader 5 is a Windows application, so we need Wine to run it on Linux.
+
+METHOD A: Using Wine (Recommended)
+----------------------------------
+
+1. Install Wine:
+
+   # For Ubuntu/Debian:
+   sudo dpkg --add-architecture i386
+   sudo apt update
+   sudo apt install wine64 wine32 winetricks
+
+   # For Fedora:
+   sudo dnf install wine winetricks
+
+   # For Arch Linux:
+   sudo pacman -S wine winetricks
+
+2. Configure Wine:
+
+   winecfg
+
+   - Set Windows version to "Windows 10"
+   - Click "Apply" then "OK"
+
+3. Install required dependencies:
+
+   winetricks corefonts vcrun2019 dotnet48
+
+4. Download MT5 Installer:
+
+   # Create directory for MT5
+   mkdir -p ~/MT5
+   cd ~/MT5
+
+   # Download MT5 installer from official website
+   wget https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe
+
+5. Install MetaTrader 5:
+
+   wine mt5setup.exe
+
+   - Follow the installation wizard
+   - Default installation path: C:\Program Files\MetaTrader 5
+   - Wait for installation to complete
+
+6. Create Desktop Shortcut (Optional):
+
+   Create file: ~/.local/share/applications/mt5.desktop
+
+   [Desktop Entry]
+   Name=MetaTrader 5
+   Exec=wine "/home/YOUR_USERNAME/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+   Type=Application
+   Categories=Finance;
+   Icon=/home/YOUR_USERNAME/.wine/drive_c/Program Files/MetaTrader 5/terminal64.exe
+
+7. Launch MetaTrader 5:
+
+   wine ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/terminal64.exe
+
+
+
+
+LAUNCHING METAEDITOR (For Script Compilation)
+---------------------------------------------
+
+MetaEditor is installed alongside MT5:
+
+wine ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/metaeditor64.exe
+
+Or from within MT5:
+- Press F4, or
+- Go to Tools > MetaQuotes Language Editor
+
+
+
+
+
+
+
+================================================================================
+                              QUICK REFERENCE
+================================================================================
+
+File Locations (Wine):
+- MT5 Installation: ~/.wine/drive_c/Program Files/MetaTrader 5/
+- EA Source Files:  ~/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/
+- Indicators:       ~/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Indicators/
+- Scripts:          ~/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Scripts/
+
+Keyboard Shortcuts (MT5):
+- F4: Open MetaEditor
+- F7: Compile (in MetaEditor)
+- Ctrl+N: Navigator panel
+- Ctrl+M: Market Watch
+- Ctrl+R: Strategy Tester
+- Ctrl+T: Toolbox (Experts/Journal tabs)
+
+Keyboard Shortcuts (MetaEditor):
+- F7: Compile
+- Ctrl+S: Save
+- F5: Debug
+- Ctrl+Space: Auto-complete
+
+Support:
+- IC Markets: support@icmarkets.com
+- MT5 Help: https://www.metatrader5.com/en/terminal/help
+- MQL5 Documentation: https://www.mql5.com/en/docs
+
+
+================================================================================
+                           TROUBLESHOOTING CHECKLIST
+================================================================================
+
+☐ Wine installed and configured correctly?
+☐ MT5 installed successfully?
+☐ Broker account created and verified?
+☐ Correct server selected in MT5?
+☐ Login credentials correct?
+☐ EA compiled without errors?
+☐ EA copied to correct folder?
+☐ "Allow Algo Trading" enabled in EA settings?
+☐ "Algo Trading" button enabled globally (green)?
+☐ Correct timeframe selected on chart?
+☐ Sufficient account balance?
+☐ Market open? (Forex closed weekends)
+
+================================================================================
+                              END OF GUIDE
+================================================================================

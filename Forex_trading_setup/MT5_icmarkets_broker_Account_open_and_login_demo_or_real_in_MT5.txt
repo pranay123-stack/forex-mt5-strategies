@@ -1,0 +1,465 @@
+================================================================================
+                    STEP 2: CREATE IC MARKETS BROKER ACCOUNT
+================================================================================
+
+IC Markets is a popular forex broker with MT5 support and tight spreads.
+
+1. VISIT IC MARKETS WEBSITE
+
+   Open browser and go to: https://www.icmarkets.com
+
+   Note: Use https://www.icmarkets.eu for European clients
+
+2. CLICK "START TRADING" or "OPEN LIVE ACCOUNT"
+
+   - You'll see options for Demo and Live accounts
+   - For testing, start with DEMO account first
+
+3. FILL REGISTRATION FORM
+
+   Personal Information:
+   - First Name
+   - Last Name
+   - Email Address (use valid email - you'll need to verify)
+   - Phone Number (with country code)
+   - Country of Residence
+   - Create Password (save this securely!)
+
+4. SELECT ACCOUNT TYPE
+
+   Choose your preferences:
+
+   Account Type Options:
+   ┌─────────────────┬────────────────────────────────────────┐
+   │ Raw Spread      │ 0.0 pips spread + $3.50 commission    │
+   │ Standard        │ From 1.0 pips spread, no commission   │
+   │ cTrader Raw     │ For cTrader platform users            │
+   └─────────────────┴────────────────────────────────────────┘
+
+   Recommended: Raw Spread (better for EAs/algorithmic trading)
+
+   Platform Selection:
+   - Select "MetaTrader 5" (NOT MetaTrader 4)
+
+   Base Currency:
+   - USD, EUR, GBP, AUD, etc.
+   - Choose based on your deposit currency
+
+   Leverage:
+   - Options: 1:30, 1:100, 1:200, 1:500
+   - For beginners: 1:100 or lower recommended
+   - Higher leverage = higher risk
+
+5. VERIFY YOUR EMAIL
+
+   - Check inbox for verification email from IC Markets
+   - Click verification link
+   - Log into Client Portal
+
+6. COMPLETE IDENTITY VERIFICATION (KYC)
+
+   Required Documents:
+
+   A) Proof of Identity (one of):
+      - Passport
+      - Driver's License
+      - National ID Card
+
+   B) Proof of Address (one of):
+      - Bank Statement (last 3 months)
+      - Utility Bill (last 3 months)
+      - Government Letter
+
+   Upload Process:
+   - Log into IC Markets Client Portal
+   - Go to "Upload Documents" section
+   - Upload clear photos/scans of documents
+   - Wait for verification (usually 1-24 hours)
+
+7. FUND YOUR ACCOUNT (For Live Trading)
+
+   Deposit Methods:
+   - Bank Transfer (Wire)
+   - Credit/Debit Card (Visa, Mastercard)
+   - Skrill, Neteller, PayPal
+   - Cryptocurrency (Bitcoin, USDT)
+
+   Minimum Deposit: $200 USD (may vary)
+
+8. GET YOUR MT5 LOGIN CREDENTIALS
+
+   After account approval, you'll receive:
+   - MT5 Login Number (e.g., 12345678)
+   - MT5 Password (trading password)
+   - Server Name (e.g., ICMarketsSC-MT5, ICMarketsEU-MT5-02)
+
+   These will be emailed or shown in Client Portal under:
+   "Accounts" > "Trading Accounts" > Your MT5 Account
+
+
+FOR DEMO ACCOUNT (Recommended for Testing First)
+------------------------------------------------
+
+1. Go to IC Markets website
+2. Click "Demo Account" or "Try Demo"
+3. Fill basic info (name, email, phone)
+4. Select:
+   - Platform: MetaTrader 5
+   - Account Type: Raw Spread
+   - Leverage: 1:100
+   - Base Currency: USD
+   - Initial Balance: $10,000 - $100,000 (virtual money)
+
+5. You'll receive demo credentials immediately via email
+
+
+================================================================================
+                    STEP 3: LOGIN TO METATRADER 5
+================================================================================
+
+1. LAUNCH METATRADER 5
+
+   wine ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/terminal64.exe
+
+2. OPEN LOGIN DIALOG
+
+   Method A: File > Login to Trade Account
+   Method B: Click on the account status bar (bottom left)
+   Method C: Press Ctrl+L
+
+3. ENTER YOUR CREDENTIALS
+
+   ┌─────────────────────────────────────────────────────────┐
+   │                   Login to Trade Account                │
+   ├─────────────────────────────────────────────────────────┤
+   │  Login:    [12345678]                                   │
+   │                                                         │
+   │  Password: [••••••••••••]                               │
+   │                                                         │
+   │  Server:   [ICMarketsSC-MT5        ▼]                   │
+   │                                                         │
+   │  ☑ Save password                                        │
+   │                                                         │
+   │            [Login]    [Cancel]                          │
+   └─────────────────────────────────────────────────────────┘
+
+   Fill in:
+   - Login: Your MT5 account number from IC Markets
+   - Password: Your trading password
+   - Server: Select correct IC Markets server
+
+   Common IC Markets Servers:
+   - ICMarketsSC-MT5 (Seychelles)
+   - ICMarketsSC-MT5-02
+   - ICMarketsEU-MT5 (EU clients)
+   - ICMarketsEU-MT5-02
+
+4. VERIFY CONNECTION
+
+   Check bottom-right corner of MT5:
+   - Green bar = Connected successfully
+   - Red bar = Connection failed (check credentials/server)
+
+   Check bottom-left for account info:
+   - Account number should be displayed
+   - Balance and equity should show
+
+5. TROUBLESHOOTING CONNECTION ISSUES
+
+   If connection fails:
+
+   a) Check internet connection
+
+   b) Verify server name (case-sensitive)
+
+   c) Try alternate servers:
+      - Right-click on "Accounts" in Navigator
+      - Select "Open an Account"
+      - Search for "IC Markets"
+      - It will show available servers
+
+   d) Check if broker requires VPN
+
+   e) Firewall/Antivirus blocking?
+      - Allow MT5 through firewall
+      - Wine apps may need specific permissions
+
+
+================================================================================
+                    STEP 4: COMPILE MT5 SCRIPT IN METAEDITOR
+================================================================================
+
+1. OPEN METAEDITOR
+
+   From MT5:
+   - Press F4, or
+   - Go to Tools > MetaQuotes Language Editor
+
+   Or directly:
+   wine ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/metaeditor64.exe
+
+2. LOCATE/CREATE YOUR EA FILE
+
+   EA files are stored in:
+   ~/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/
+
+   To open existing file:
+   - File > Open (Ctrl+O)
+   - Navigate to MQL5/Experts folder
+   - Select your .mq5 file
+
+   To create new file:
+   - File > New (Ctrl+N)
+   - Select "Expert Advisor (template)"
+   - Enter name and click "Next"
+   - Click "Finish"
+
+3. COPY YOUR EA CODE
+
+   If you have EA code (like the ones I created):
+
+   Method A - Copy file directly:
+   cp /path/to/your/EA.mq5 ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/MQL5/Experts/
+
+   Method B - Copy/paste in MetaEditor:
+   - Open the file in MetaEditor
+   - Select all (Ctrl+A)
+   - Delete existing template code
+   - Paste your EA code (Ctrl+V)
+   - Save (Ctrl+S)
+
+4. COMPILE THE SCRIPT
+
+   Press F7 or click "Compile" button (or Build > Compile)
+
+   Check the "Errors" tab at bottom:
+
+   ┌─────────────────────────────────────────────────────────┐
+   │ Errors    Warnings    Results                          │
+   ├─────────────────────────────────────────────────────────┤
+   │ 0 error(s), 0 warning(s), compile time: 1234 msec      │
+   │                                                         │
+   │ MyEA.mq5 compiled successfully                         │
+   └─────────────────────────────────────────────────────────┘
+
+   SUCCESS: "0 error(s)" means compilation successful!
+
+   If errors exist:
+   - Double-click error to jump to problematic line
+   - Fix the issue
+   - Recompile (F7)
+
+5. VERIFY COMPILED FILE
+
+   After successful compilation:
+   - MyEA.mq5 (source code)
+   - MyEA.ex5 (compiled executable) <- This is what MT5 runs
+
+   The .ex5 file appears in the same folder as .mq5
+
+
+COMMON COMPILATION ERRORS AND FIXES
+-----------------------------------
+
+Error: "Trade.mqh" not found
+Fix: The include file is built-in, ensure MT5 is properly installed
+
+Error: "undeclared identifier"
+Fix: Variable/function not defined - check spelling and scope
+
+Error: "parameter conversion not allowed"
+Fix: Wrong data type - check function parameter types
+
+Warning: "possible loss of data due to type conversion"
+Fix: Use explicit cast: (int)doubleValue or (double)intValue
+
+
+================================================================================
+                    STEP 5: RUN EA ON CHART IN METATRADER 5
+================================================================================
+
+1. OPEN METATRADER 5 (not MetaEditor)
+
+   wine ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/terminal64.exe
+
+2. OPEN A CHART
+
+   Method A: Market Watch
+   - Press Ctrl+M to show Market Watch
+   - Right-click on symbol (e.g., EURUSD)
+   - Select "Chart Window"
+
+   Method B: File menu
+   - File > New Chart > Select symbol
+
+3. SET CORRECT TIMEFRAME
+
+   Click timeframe buttons on toolbar: M1, M5, M15, M30, H1, H4, D1, W1, MN
+
+   Or right-click chart > Timeframes > Select timeframe
+
+   Make sure timeframe matches your EA settings!
+
+4. LOCATE YOUR EA IN NAVIGATOR
+
+   Press Ctrl+N to show Navigator panel
+
+   Navigate to:
+   Navigator > Expert Advisors > Your_EA_Name
+
+   Your compiled EAs appear here automatically
+
+5. DRAG EA ONTO CHART
+
+   Method A: Drag and Drop
+   - Click and hold your EA in Navigator
+   - Drag it onto the chart
+   - Release mouse button
+
+   Method B: Double-click
+   - Double-click EA name in Navigator
+   - It attaches to active chart
+
+6. CONFIGURE EA SETTINGS
+
+   A settings dialog appears:
+
+   ┌─────────────────────────────────────────────────────────┐
+   │                    Expert Advisor                       │
+   │─────────────────────────────────────────────────────────│
+   │  Common │ Inputs │ Dependencies                        │
+   ├─────────────────────────────────────────────────────────┤
+   │                                                         │
+   │  Common Tab:                                            │
+   │  ☑ Allow Algo Trading        <- MUST BE CHECKED!       │
+   │  ☑ Allow DLL imports (if needed)                       │
+   │                                                         │
+   │  Inputs Tab:                                            │
+   │  LotSize          [0.01]                                │
+   │  StopLossPips     [20]                                  │
+   │  TakeProfitPips   [40]                                  │
+   │  MagicNumber      [12345]                               │
+   │  ... (your EA parameters)                               │
+   │                                                         │
+   │            [OK]    [Cancel]                             │
+   └─────────────────────────────────────────────────────────┘
+
+   IMPORTANT SETTINGS:
+   - "Allow Algo Trading" MUST be checked
+   - Configure input parameters as needed
+   - Click "OK" to attach EA
+
+7. ENABLE ALGO TRADING GLOBALLY
+
+   CRITICAL: Even with EA attached, you must enable Algo Trading globally!
+
+   Method A: Click "Algo Trading" button on toolbar
+   - Button should be GREEN (enabled)
+   - If RED/gray, click to enable
+
+   Method B: Tools > Options > Expert Advisors
+   - Check "Allow Algorithmic Trading"
+   - Check "Allow DLL imports" if your EA needs it
+
+8. VERIFY EA IS RUNNING
+
+   Check these indicators:
+
+   a) Chart corner shows EA name with smiley face 😊
+      - 😊 = EA running and algo trading enabled
+      - 😐 = EA attached but algo trading disabled
+      - No face = EA not attached
+
+   b) Experts tab (View > Toolbox > Experts)
+      - Shows EA initialization messages
+      - Displays Print() outputs from EA
+      - Check for errors here
+
+   c) Journal tab
+      - Shows all trading activity
+      - Order executions, modifications, errors
+
+9. MONITOR EA ACTIVITY
+
+   Experts Tab Messages:
+   ┌─────────────────────────────────────────────────────────┐
+   │ 2024.01.15 10:30:00  MyEA EURUSD,H1: initialized       │
+   │ 2024.01.15 10:30:01  MyEA EURUSD,H1: BUY signal...     │
+   │ 2024.01.15 10:30:01  MyEA EURUSD,H1: Order executed    │
+   └─────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                         ADDITIONAL TIPS & BEST PRACTICES
+================================================================================
+
+TESTING YOUR EA (STRATEGY TESTER)
+---------------------------------
+
+Before live trading, ALWAYS backtest:
+
+1. Open Strategy Tester: View > Strategy Tester (Ctrl+R)
+
+2. Configure test:
+   - Expert: Select your EA
+   - Symbol: e.g., EURUSD
+   - Timeframe: Match your EA's timeframe
+   - Date: Set test period
+   - Modeling: "Every tick based on real ticks" (most accurate)
+   - Deposit: Starting balance
+   - Leverage: Match your account
+
+3. Click "Start" and wait for results
+
+4. Review:
+   - Results tab: Trade list
+   - Graph tab: Equity curve
+   - Report tab: Statistics (profit factor, drawdown, etc.)
+
+
+RUNNING MULTIPLE EAs
+--------------------
+
+- Each chart can have ONE EA
+- Use different Magic Numbers for each EA
+- Open multiple charts for multiple EAs
+- Each EA operates independently
+
+
+KEEPING MT5 RUNNING 24/7 (VPS)
+------------------------------
+
+For automated trading, you need MT5 running continuously:
+
+Option 1: Local PC (not recommended)
+- Keep PC on 24/7
+- Disable sleep/hibernate
+- Risk of internet/power outages
+
+Option 2: VPS (Recommended)
+- Rent Windows VPS
+- Install MT5 on VPS
+- Providers: ForexVPS, BeeksFX, AWS, etc.
+- ~$20-50/month for forex-optimized VPS
+
+Option 3: MT5 VPS (from broker)
+- Some brokers offer free/paid VPS
+- Check IC Markets for VPS options
+
+
+SECURITY BEST PRACTICES
+-----------------------
+
+1. Use different passwords:
+   - Master password (full access)
+   - Investor password (read-only)
+
+2. Enable 2FA on broker account
+
+3. Regularly backup:
+   - EA source files (.mq5)
+   - MT5 config files
+   - Trade history
+
+4. Test on demo account first!
+

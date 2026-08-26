@@ -1,0 +1,253 @@
+==========================================
+  MT5 EA Development - Full Flow
+  How to Create, Compile & Run an EA in MT5
+==========================================
+
+==========================================
+  OVERVIEW: The Complete Pipeline
+==========================================
+
+  Write .mq5 code → Copy to MT5 folder → Compile in MetaEditor → EA appears in MT5
+       ↓                   ↓                      ↓                      ↓
+  (Source code)      (Put in right place)   (Creates .ex5 binary)  (Ready to use)
+
+==========================================
+  FILE TYPES
+==========================================
+
+  .mq5  = Source code (human readable, you write this)
+  .ex5  = Compiled binary (MT5 runs this, MetaEditor creates it)
+  .mqh  = Include/header file (shared code used by .mq5 files)
+
+  MT5 can ONLY run .ex5 files. You MUST compile .mq5 → .ex5 first.
+
+==========================================
+  STEP 1: Write the EA Code
+==========================================
+
+  Option A: Write in any text editor (VS Code, Notepad, etc.)
+    - Create a file with .mq5 extension
+    - Write your MQL5 code
+    - Save the file
+
+  Option B: Write directly in MetaEditor
+    - Open MT5 → Press F4 (opens MetaEditor)
+    - File → New → Expert Advisor
+    - Write your code
+    - Save (already in the right folder)
+
+  If you used Option B, skip Step 2 (file is already in MT5 folder).
+
+==========================================
+  STEP 2: Copy .mq5 File to MT5 Folder
+==========================================
+
+  (Skip this step if you wrote the code directly in MetaEditor)
+
+  The EA file must be placed in MT5's Experts folder.
+
+  --- Method A: Using MT5 GUI ---
+
+    1. In MT5 → Click "File" → "Open Data Folder"
+    2. A file explorer window opens
+    3. Navigate to: MQL5 → Experts → Advisors
+    4. Drag and drop your .mq5 file into this folder
+    5. If your EA has .mqh include files, copy them to:
+       MQL5 → Include
+
+  --- Method B: Using Terminal (Linux with Wine) ---
+
+    Find where MT5 is installed:
+      find /home/YOUR_USER -name "Experts" -path "*/MQL5/*"
+
+    Typical path on Linux (Wine):
+      /home/YOUR_USER/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/Advisors/
+
+    Copy command:
+      cp /path/to/your/EA_Name.mq5 "/home/YOUR_USER/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/Advisors/"
+
+    For include files (.mqh):
+      cp /path/to/your/FileName.mqh "/home/YOUR_USER/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Include/"
+
+  --- Method C: Using File Explorer (Windows) ---
+
+    Typical path on Windows:
+      C:\Program Files\MetaTrader 5\MQL5\Experts\Advisors\
+
+    Or find it via:
+      MT5 → File → Open Data Folder → MQL5 → Experts → Advisors
+
+  --- IMPORTANT: Folder Structure ---
+
+    MQL5/
+    ├── Experts/           ← EA files go here
+    │   ├── Advisors/      ← Or here (subfolder, both work)
+    │   ├── YourEA.mq5
+    │   └── YourEA.ex5     (created after compile)
+    ├── Include/           ← .mqh header files go here
+    │   ├── Trade/
+    │   │   └── Trade.mqh  (built-in)
+    │   └── YourInclude.mqh
+    ├── Indicators/        ← Custom indicators go here
+    ├── Scripts/           ← One-time scripts go here
+    └── Libraries/         ← DLL/library files go here
+
+==========================================
+  STEP 3: Compile in MetaEditor
+==========================================
+
+  1. In MT5, press F4 (opens MetaEditor)
+
+  2. In MetaEditor's Navigator panel (left side):
+     - Expand "Experts" or "Experts/Advisors"
+     - Find your .mq5 file
+     - Double-click to open it
+
+  3. Press F7 (or click "Compile" button in toolbar)
+
+  4. Check the "Errors" tab at the bottom:
+     - 0 errors = SUCCESS → .ex5 file is created
+     - Errors = FIX THEM before proceeding
+     - Warnings = Usually OK, but review them
+
+  5. Common compile errors:
+     - "cannot open include file" → .mqh file missing from MQL5/Include/
+     - "undeclared identifier"    → typo in variable/function name
+     - "syntax error"             → missing semicolon, bracket, etc.
+
+  What happens during compilation:
+    YourEA.mq5  →  [MetaEditor Compiler]  →  YourEA.ex5
+    (source)         (press F7)              (binary, MT5 runs this)
+
+==========================================
+  STEP 4: EA Appears in MT5
+==========================================
+
+  1. Go back to MT5 (Alt+Tab or click MT5 in taskbar)
+
+  2. In the Navigator panel (Ctrl+N to show if hidden):
+     - Expand "Expert Advisors"
+     - Your EA should appear in the list
+
+  3. If it's NOT showing:
+     - Right-click "Expert Advisors" → Click "Refresh"
+     - If still not showing, check that compile had 0 errors
+     - Make sure the .mq5 file is in the correct folder
+
+==========================================
+  STEP 5: Use the EA
+==========================================
+
+  You can now use the EA in two ways:
+
+  --- Option A: Backtest (Strategy Tester) ---
+
+    1. Press Ctrl+R (opens Strategy Tester)
+    2. Select your EA from the "Expert" dropdown
+    3. Set: Symbol, Timeframe, Date Range, Deposit
+    4. Click "Start"
+    5. View results in: Backtest, Graph, Report tabs
+    6. Export: Right-click → Save as Report (HTML)
+
+  --- Option B: Live/Demo Trading ---
+
+    1. Open a chart for the symbol you want to trade
+    2. Set the correct timeframe
+    3. Make sure "Algo Trading" is enabled (green button in toolbar)
+    4. From Navigator, drag the EA onto the chart
+       OR double-click the EA name
+    5. Settings dialog appears:
+       - Common tab: Check "Allow Algo Trading"
+       - Inputs tab: Set your parameters
+       - Click OK
+    6. Smiley face on chart = EA is running
+
+==========================================
+  STEP 6: Edit and Re-Compile (Development Cycle)
+==========================================
+
+  When you need to make changes to your EA:
+
+  1. Edit the .mq5 source file (in MetaEditor or your text editor)
+  2. Save the changes
+  3. If edited outside MetaEditor: copy updated .mq5 to MT5 folder
+  4. In MetaEditor: press F7 to re-compile
+  5. If EA is attached to a chart: remove it and re-attach
+  6. If backtesting: just re-run the test (it picks up new .ex5)
+
+  Development cycle:
+    Edit code → Save → Copy (if external) → Compile (F7) → Test → Repeat
+
+==========================================
+  QUICK REFERENCE: Commands & Shortcuts
+==========================================
+
+  In MT5:
+    F4        → Open MetaEditor
+    Ctrl+R    → Open Strategy Tester
+    Ctrl+N    → Show/Hide Navigator panel
+    Ctrl+T    → Show/Hide Terminal panel (trade/history tabs)
+
+  In MetaEditor:
+    F7        → Compile current file
+    Ctrl+S    → Save file
+    F4        → Switch back to MT5
+    Ctrl+N    → New file
+
+==========================================
+  EXAMPLE: Full Walkthrough
+==========================================
+
+  Scenario: You wrote "MyNewEA.mq5" on your Desktop
+
+  1. Terminal:
+     cp ~/Desktop/MyNewEA.mq5 "~/.wine/drive_c/Program Files/MetaTrader 5/MQL5/Experts/Advisors/"
+
+  2. MT5 → Press F4 (MetaEditor opens)
+
+  3. MetaEditor left panel → Experts → Advisors → double-click MyNewEA.mq5
+
+  4. Press F7 → Check: "0 errors, 0 warnings" ✓
+
+  5. Alt+Tab back to MT5
+
+  6. Navigator → Expert Advisors → Right-click → Refresh
+
+  7. "MyNewEA" appears in the list ✓
+
+  8. Ctrl+R → Select "MyNewEA" → Set EURUSD M15 → Start backtest
+
+  Done!
+
+==========================================
+  TROUBLESHOOTING
+==========================================
+
+  EA not showing in MT5:
+    → Right-click Expert Advisors → Refresh
+    → Check compile had 0 errors
+    → Check file is in MQL5/Experts/ or MQL5/Experts/Advisors/
+
+  Compile errors about missing includes:
+    → Copy .mqh files to MQL5/Include/
+    → Check #include paths match actual file locations
+
+  EA has smiley face but no trades:
+    → Check "Algo Trading" button is green (enabled)
+    → Check Journal tab for errors
+    → Verify EA logic matches current market conditions
+
+  Backtest shows 0 trades:
+    → Check symbol and timeframe match EA's design
+    → Check date range has data
+    → Check Journal for "no history" errors
+    → Download history: open chart, scroll left
+
+  "Not enough money" error:
+    → Increase deposit in Strategy Tester settings
+    → Or reduce lot size in EA inputs
+
+  Linux/Wine specific:
+    → MT5 path: ~/.wine/drive_c/Program Files/MetaTrader 5/
+    → File permissions: make sure copied files are readable
+    → If MetaEditor can't see files: try refreshing or restarting MT5

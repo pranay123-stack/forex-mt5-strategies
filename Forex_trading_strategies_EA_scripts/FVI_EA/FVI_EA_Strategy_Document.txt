@@ -1,0 +1,294 @@
+==========================================
+  FVI_EA - Strategy Document
+  Flower Volatility Index Trend-Following EA
+==========================================
+
+==========================================
+  1. STRATEGY OVERVIEW
+==========================================
+
+Name:           FVI_EA (Flower Volatility Index)
+Type:           Trend-Following with Mean Reversion Entry
+Version:        1.00
+Symbol:         Any (designed for Forex majors)
+Timeframe:      Any (recommended: M15, H1, H4)
+Direction:      Both (BUY and SELL)
+Style:          Mechanical, fully automated
+
+Description:
+  The FVI EA uses a custom oscillator derived from Rose Curve mathematics
+  to detect extreme price deviations within a confirmed trend. The Awesome
+  Oscillator (AO) confirms the trend direction, and the FVI identifies
+  optimal entry points when price reaches an extreme deviation from the mean.
+
+  Core idea: In an uptrend (AO > 0), buy when FVI shows extreme downward
+  deviation (oversold). In a downtrend (AO < 0), sell when FVI shows extreme
+  upward deviation (overbought). This combines trend-following with
+  mean-reversion timing.
+
+==========================================
+  2. INDICATOR: Flower Volatility Index (FVI)
+==========================================
+
+  The FVI is a custom oscillator derived from the Rose Curve (rhodonea curve)
+  in polar coordinates.
+
+  --- Mathematical Formula ---
+
+  Step 1: Compute market-derived angle (q)
+    q = k * (Close - MA) / ATR
+
+    Where:
+      Close = last closed bar's close price
+      MA    = Simple Moving Average of Close (period = MA_Period)
+      ATR   = Average True Range (period = ATR_Period)
+      k     = sensitivity scalar (adjusts how fast the curve rotates)
+
+    Interpretation:
+      q represents a normalized measure of how far price has deviated
+      from its mean, scaled by current volatility. A large q means
+      price is far from the MA relative to recent volatility.
+
+  Step 2: Compute radial component (r) from Rose Curve
+    r = sin(n * q / (2 * d))
+
+    Where:
+      n = Rose Curve numerator (controls number of petals)
+      d = Rose Curve denominator (controls petal overlap)
+
+  Step 3: Compute FVI value
+    X-component: FVI = r * cos(q)
+    Y-component: FVI = r * sin(q)
+
+    The user selects which component to use via Use_X_Component input.
+
+  --- Properties ---
+    Range:    [-1, +1] (always bounded)
+    > +0.7:   Overbought zone (price far above mean)
+    < -0.7:   Oversold zone (price far below mean)
+    ~ 0:      Near equilibrium
+
+  --- Rose Curve Parameters (n, d) ---
+    n=5, d=1: 5-petal rose (default) — good general-purpose sensitivity
+    n=3, d=1: 3-petal rose — smoother, fewer signals
+    n=7, d=1: 7-petal rose — more sensitive, more signals
+    n=3, d=2: Creates more complex patterns — experimental
+
+==========================================
+  3. TREND FILTER: Awesome Oscillator (AO)
+==========================================
+
+  The Awesome Oscillator is used as a trend direction filter.
+
+  AO = SMA(Median Price, 5) - SMA(Median Price, 34)
+  Where: Median Price = (High + Low) / 2
+
+  Interpretation:
+    AO > 0 → Short-term momentum is above long-term → UPTREND
+    AO < 0 → Short-term momentum is below long-term → DOWNTREND
+
+  No extra input parameters needed — AO uses standard 5/34 periods.
+
+==========================================
+  4. ENTRY CONDITIONS
+==========================================
+
+  --- BUY ENTRY ---
+    All conditions must be true simultaneously:
+
+    1. Trend Filter:     AO > 0 (uptrend confirmed)
+    2. FVI Previous Bar: prevFVI > -FVI_Threshold (was NOT in oversold zone)
+    3. FVI Current Bar:  curFVI <= -FVI_Threshold (just ENTERED oversold zone)
+    4. Position Check:   No existing BUY position open for this EA
+    5. Cooldown:         barsSinceLastTrade >= MinBarsBtwEntries
+
+    Logic: In an uptrend, price has pulled back significantly (FVI crossed
+    into extreme low territory). This is a buy-the-dip opportunity.
+
+  --- SELL ENTRY ---
+    All conditions must be true simultaneously:
+
+    1. Trend Filter:     AO < 0 (downtrend confirmed)
+    2. FVI Previous Bar: prevFVI < +FVI_Threshold (was NOT in overbought zone)
+    3. FVI Current Bar:  curFVI >= +FVI_Threshold (just ENTERED overbought zone)
+    4. Position Check:   No existing SELL position open for this EA
+    5. Cooldown:         barsSinceLastTrade >= MinBarsBtwEntries
+
+    Logic: In a downtrend, price has bounced up significantly (FVI crossed
+    into extreme high territory). This is a sell-the-rally opportunity.
+
+==========================================
+  5. EXIT CONDITIONS
+==========================================
+
+  Exits are handled entirely by fixed Stop Loss and Take Profit:
+
+  BUY Exit:
+    Stop Loss:   Entry Price - StopLoss_Pips
+    Take Profit: Entry Price + TakeProfit_Pips
+
+  SELL Exit:
+    Stop Loss:   Entry Price + StopLoss_Pips
+    Take Profit: Entry Price - TakeProfit_Pips
+
+  No manual close logic. No trailing stop. TP/SL handle all exits.
+
+==========================================
+  6. STOP LOSS
+==========================================
+
+  Type:     Fixed pip-based
+  Default:  50 pips
+  Applied:  At order open time
+
+  Handles 4-digit and 5-digit brokers automatically:
+    5-digit: SL = StopLoss_Pips * 10 * Point
+    4-digit: SL = StopLoss_Pips * 1 * Point
+
+==========================================
+  7. TAKE PROFIT
+==========================================
+
+  Type:     Fixed pip-based
+  Default:  100 pips (2:1 risk-reward ratio)
+  Applied:  At order open time
+
+  Risk-Reward Ratio = TakeProfit_Pips / StopLoss_Pips = 100/50 = 2:1
+
+==========================================
+  8. POSITION SIZING
+==========================================
+
+  Method:   Fixed lot size
+  Default:  0.1 lots
+
+  Lot size is validated against broker limits:
+    - Minimum lot (SYMBOL_VOLUME_MIN)
+    - Maximum lot (SYMBOL_VOLUME_MAX)
+    - Lot step (SYMBOL_VOLUME_STEP)
+
+==========================================
+  9. POSITION MANAGEMENT
+==========================================
+
+  Max BUY positions:   1 (per symbol, per magic number)
+  Max SELL positions:  1 (per symbol, per magic number)
+  Simultaneous:        YES — can hold 1 BUY + 1 SELL at the same time
+  Cooldown:            MinBarsBtwEntries bars between ANY entry
+  Trailing Stop:       None
+  Breakeven:           None
+  Partial Close:       None
+
+==========================================
+  10. STRATEGY CONFIGURATION (Input Parameters)
+==========================================
+
+  --- FVI Indicator ---
+  Parameter          Default    Description
+  ---------          -------    ---------------------------------
+  MA_Period          14         Moving Average period for FVI
+  ATR_Period         14         ATR period for FVI normalization
+  n_param            5          Rose Curve numerator (petal count)
+  d_param            1          Rose Curve denominator
+  k_sensitivity      1.0        Sensitivity scalar
+  Use_X_Component    true       X-component (true) or Y-component (false)
+
+  --- Trade Settings ---
+  Parameter          Default    Description
+  ---------          -------    ---------------------------------
+  LotSize            0.1        Fixed lot size
+  StopLoss_Pips      50.0       Stop loss in pips
+  TakeProfit_Pips    100.0      Take profit in pips
+  MinBarsBtwEntries  10         Cooldown bars between entries
+  FVI_Threshold      0.7        FVI signal threshold
+  MagicNumber        123456     EA identifier
+
+==========================================
+  11. FILTERS
+==========================================
+
+  Active Filters:
+    [x] Trend filter (Awesome Oscillator direction)
+    [x] Cooldown filter (minimum bars between trades)
+    [x] Position count filter (max 1 buy + 1 sell)
+
+  Not Implemented:
+    [ ] Spread filter
+    [ ] Session/time filter
+    [ ] News filter
+    [ ] Volatility regime filter
+    [ ] Day-of-week filter
+
+==========================================
+  12. SIGNAL FLOW DIAGRAM
+==========================================
+
+  New Bar Formed
+       |
+       v
+  Calculate FVI (bar[1])
+       |
+       v
+  Check Cooldown >= MinBarsBtwEntries?
+       |               |
+      NO              YES
+       |               |
+     SKIP              v
+              Check AO Direction (bar[1])
+                    |
+          +---------+---------+
+          |                   |
+       AO > 0              AO < 0
+       (Uptrend)           (Downtrend)
+          |                   |
+          v                   v
+    FVI crossed           FVI crossed
+    below -Threshold?     above +Threshold?
+          |                   |
+         YES                 YES
+          |                   |
+          v                   v
+    No open BUY?         No open SELL?
+          |                   |
+         YES                 YES
+          |                   |
+          v                   v
+     OPEN BUY            OPEN SELL
+     (SL + TP)           (SL + TP)
+          |                   |
+          v                   v
+    Reset cooldown       Reset cooldown
+
+==========================================
+  13. RECOMMENDED BACKTEST SETTINGS
+==========================================
+
+  Symbol:      EURUSD (or any major pair)
+  Timeframe:   M15 or H1 (recommended)
+  Modeling:    Every tick
+  Deposit:     $10,000
+  Date Range:  2024.01.01 to 2025.12.31
+  Leverage:    1:100
+
+  Parameter suggestions to test:
+    Conservative: FVI_Threshold=0.8, SL=30, TP=60, Cooldown=15
+    Default:      FVI_Threshold=0.7, SL=50, TP=100, Cooldown=10
+    Aggressive:   FVI_Threshold=0.5, SL=40, TP=80, Cooldown=5
+
+==========================================
+  14. OPTIMIZATION PARAMETERS
+==========================================
+
+  Most impactful parameters to optimize:
+    1. FVI_Threshold    (range: 0.3 to 0.9, step 0.1)
+    2. MA_Period        (range: 7 to 50, step 1)
+    3. k_sensitivity    (range: 0.5 to 3.0, step 0.5)
+    4. n_param          (range: 3 to 9, step 2)
+    5. StopLoss_Pips    (range: 20 to 100, step 10)
+    6. TakeProfit_Pips  (range: 40 to 200, step 20)
+
+  Less impactful:
+    7. ATR_Period        (range: 7 to 30)
+    8. MinBarsBtwEntries (range: 5 to 20)
+    9. d_param           (1 or 2)
+    10. Use_X_Component  (true/false)

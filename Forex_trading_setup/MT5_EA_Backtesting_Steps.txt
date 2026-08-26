@@ -1,0 +1,139 @@
+==========================================
+  MT5 EA Backtesting Steps - Quick Reference
+==========================================
+
+Step 1: Code the EA
+-------------------
+- Write the .mq5 file based on your strategy concept
+- Save it to: MQL5/Experts/ folder inside MT5 Data Directory
+- If the EA has .mqh include files, copy them to MQL5/Include/
+
+Step 2: Compile the EA
+----------------------
+- Open MT5 → Press F4 (opens MetaEditor)
+- Open the .mq5 file in MetaEditor
+- Press F7 to compile
+- Check the Errors tab → must show 0 errors (warnings are OK)
+- A .ex5 file is generated (this is the compiled EA)
+
+Step 3: Open Strategy Tester
+----------------------------
+- Back in MT5, press Ctrl+R to open the Strategy Tester
+- Select "Single" test mode (first icon)
+
+Step 4: Configure Backtest Settings
+------------------------------------
+- Expert Advisor  → Select your EA from the dropdown
+- Symbol          → Choose the trading pair (e.g., EURUSD)
+- Timeframe       → Set the timeframe (e.g., M1, M5, M15, H1)
+- Modeling        → "Every tick" (recommended) or "Every tick based on real ticks" (best)
+- Date Range      → Check "Custom period" → set From and To dates
+- Deposit         → Set initial balance (e.g., 10000 USD)
+- Leverage        → Set leverage (e.g., 1:100)
+- Leave other settings as default unless needed
+
+Step 5: Start the Backtest
+--------------------------
+- Click the "Start" button (bottom right of Strategy Tester)
+- Watch the thin green progress bar at the very bottom of MT5 window
+- Wait for it to reach 100%
+- You can click the "Journal" tab to monitor for errors while it runs
+- M1 timeframe backtests take longer (5-15 min), higher timeframes are faster
+
+Step 6: View Results (tabs appear at bottom after completion)
+-------------------------------------------------------------
+- Backtest tab  → Shows list of all trades executed
+- Graph tab     → Shows the equity curve (balance over time)
+- Report tab    → Shows key performance metrics:
+                   * Net Profit
+                   * Max Drawdown ($ and %)
+                   * Profit Factor
+                   * Total Trades
+                   * Win Rate (%)
+                   * Sharpe Ratio
+
+Step 7: Export Results for Client
+---------------------------------
+- Report tab → Right-click → "Save as Report (HTML)" → save as EA_Name_Report.html
+- Graph tab  → Right-click → "Save as Picture"       → save as EA_Name_Graph.png
+- Optionally take screenshots of the Report tab
+
+Step 8: Organize Deliverables
+-----------------------------
+Create a folder structure like:
+
+  Backtest_Reports/
+  ├── EA1_DXY_Strategy/
+  │   ├── report.html
+  │   └── equity_curve.png
+  ├── EA2_IchimokuRSI/
+  │   ├── report.html
+  │   └── equity_curve.png
+  ├── EA3_SmartMoney_OrderBlock/
+  │   ├── report.html
+  │   └── equity_curve.png
+  ├── EA4_StatArb_MeanReversion/
+  │   ├── report.html
+  │   └── equity_curve.png
+  └── EA5_CurrencyStrength/
+      ├── report.html
+      └── equity_curve.png
+
+Zip the folder and send to the client.
+
+==========================================
+  Recommended Backtest Settings per EA
+==========================================
+
+EA 1: DXY_Strategy_EA_v3
+  Symbol:    EURUSD
+  Timeframe: M1
+  Note:      Multi-symbol EA - needs EURUSD, USDJPY, GBPUSD, USDCAD, USDSEK, USDCHF in Market Watch
+
+EA 2: IchimokuRSI_MTF_EA
+  Symbol:    EURUSD
+  Timeframe: M15
+  Note:      Uses H1 (trend) and H4 (higher filter) - multi-timeframe
+
+EA 3: SmartMoney_OrderBlock_EA
+  Symbol:    EURUSD
+  Timeframe: M15
+  Note:      Uses H1 for market structure, London & NY session filter active
+
+EA 4: StatArb_MeanReversion_EA
+  Symbol:    EURUSD
+  Timeframe: H1
+  Note:      Correlated pair is GBPUSD - ensure it's in Market Watch
+
+EA 5: CurrencyStrengthEA
+  Symbol:    EURUSD (or any major pair)
+  Timeframe: M15
+  Note:      Needs all 28 major pairs in Market Watch, semi-automated with dashboard
+
+Common Settings for All:
+  Modeling:  Every tick
+  Deposit:   10000 USD
+  Leverage:  1:100
+  Date:      2024.01.01 to 2025.12.31
+
+==========================================
+  Troubleshooting
+==========================================
+- "No history data"     → Download history: open chart for the symbol, scroll left
+- "Not enough money"    → Increase deposit amount
+- EA not in dropdown    → Compile it first (F4 → F7), then Refresh in Navigator
+- No trades taken       → Check Journal tab for errors, verify symbol/timeframe match
+- Multi-symbol EA fails → Add all required symbols to Market Watch (Ctrl+U)
+
+
+To export it:
+Right-click anywhere on that metrics table you see at the bottom
+Select "Save as Report (HTML)" or "Report"
+Save it to your Desktop
+Open the saved HTML file in your browser — it will be much clearer to read
+
+
+
+To get the equity curve:
+Click the "Graph" tab (next to Report at the bottom)
+Right-click on the graph → "Save as Picture"
